@@ -5,10 +5,13 @@
 #include <time.h>
 
 
+// Choose how to initialize matrix in `initMat()`
 typedef enum { ZERO, ONE_RING, ONE, CHECKER, INCR, DEC_RESET_INCR, RANDOM } Init;
 
 // ----- Helpers ----------------
 
+/*  Return closest power of 2 that's higher than x
+    e.g: x = 5 -> return 8                          */
 int closestHighPow(int x) {
     int pow = 2;
     while (pow < x)
@@ -17,6 +20,8 @@ int closestHighPow(int x) {
     return pow;
 }
 
+/*  Print matrix
+    use this to debug!  */
 void printMat(double* M, int n) {
     int i,j,k;
 
@@ -30,6 +35,7 @@ void printMat(double* M, int n) {
     printf("\n");
 }
 
+// Print matrix as a 1D array
 void printArr(double* M, int n) {
     int i;
 
@@ -40,50 +46,73 @@ void printArr(double* M, int n) {
     printf("\n\n");
 }
 
-
+/*  Initialize matrix with size = n, type = init
+    then expand it to closest power of 2
+    e.g: 5x5 -> 8x8                                 */
 double* initMat(double* M, int n, Init init) {
     double data;
     int i,j,k;
 
-    if (init == ZERO) {
-        for (i = 0; i < n; i++)
-            for (j = 0; j < n; j++)
-                M[i*n + j] = 0;
-    }
-    else if (init == INCR) {
-        data = 0;
+    switch(init) {
+        case ZERO:
+            for (i = 0; i < n; i++)
+                for (j = 0; j < n; j++)
+                    M[i*n + j] = 0;
+            
+            break;
 
-        for (i = 0; i < n; i++) {
-            for (j = 0; j < n; j++) {
-                M[i*n + j] = data;
-                data++;
-            }
-        }
-    }
-    else if (init == DEC_RESET_INCR) {
-        for (i = 0; i < n; i++) {
-            data = 0.0;
-            for (j = 0; j < n; j++) {
-                data += 1.0 / (double)n;
-                M[i*n + j] = data;
-            }
-        }
-    }
+        case ONE:
+            for (i = 0; i < n; i++)
+                for (j = 0; j < n; j++)
+                    M[i*n + j] = 1;
 
-    else if (init == ONE_RING) {
-        for (i = 0; i < n; i++) {
-            M[i] = 1;
-            M[(n-1)*n + i] = 1;
-        }
-        for (i = 0; i < n; i++) {
-            M[i*n] = 1;
-            M[i*n + (n-1)] = 1;
-        }
-    }
-    else if (init == ONE) {
-        for (i = 0; i < n; i++)
-            for (j = 0; j < n; j++)
-                M[i*n + j] = 1;
+            break;
+
+        case ONE_RING:
+            for (i = 0; i < n; i++) {
+                M[i] = 1;
+                M[(n-1)*n + i] = 1;
+            }
+
+            for (i = 0; i < n; i++) {
+                M[i*n] = 1;
+                M[i*n + (n-1)] = 1;
+            }
+
+            break;
+
+        case CHECKER:
+            for (i = 0; i < n; i++) {
+                for (j = 0; j < n; j++) {
+                    M[i*n + j] = (i + j) % 2;
+                }
+            }
+            break;
+            
+        case INCR:
+            data = 0;
+            for (i = 0; i < n; i++) {
+                for (j = 0; j < n; j++) {
+                    M[i*n + j] = data;
+                    data++;
+                }
+            }
+            break;
+
+        case DEC_RESET_INCR:
+            for (i = 0; i < n; i++) {
+                data = 0.0;
+                for (j = 0; j < n; j++) {
+                    data += 1.0 / (double)n;
+                    M[i*n + j] = data;
+                }
+            }
+            break;
+
+        case RANDOM:
+            
+            break;
+
     }
 
 
@@ -102,6 +131,9 @@ double* initMat(double* M, int n, Init init) {
     return expanded_M;
 }
 
+/*  Trim matrix from expanded size = expanded_n x expanded_n 
+             down to original size = n x n
+    e.g: 8x8 -> 5x5 or 6x6 or 7x7, depends on original size  */
 double* trim(double* M, int n, int expanded_n) {
     double* trimmed = malloc(n * n * sizeof(double));
     int i,j,k;
@@ -115,8 +147,7 @@ double* trim(double* M, int n, int expanded_n) {
     return trimmed;
 }
 
-// ----- Operations ---------------
-
+// ---- Matrix operations --------------
 double* add(double* A, double* B, int n) {
     double* C = malloc(n * n * sizeof(double));
     int i,j;
@@ -139,7 +170,8 @@ double* sub(double* A, double* B, int n) {
     return C;
 }
 
-// ONLY FOR SMALL MATRICES  ( maybe 4x4 )
+/*  ONLY FOR SMALL MATRICES  
+    maybe 4x4 ?             */
 double* mul(double* A, double* B, int n) {
     double* C = malloc(n * n * sizeof(double));
     int i,j,k;
@@ -152,9 +184,11 @@ double* mul(double* A, double* B, int n) {
     return C;
 }
 
-// ----- Matrix multiplication -------------------------------
+// ----- Strassen -------------------------------
 
-// TODO: CHANGE n TO GENERAL NUMBERS
+/*  Split matrix (n x n, with n = power of 2) 
+    into 4 equal blocks
+    and update pM11...pM22                      */
 void split(double* M, double** pM11, double** pM12, double** pM21, double** pM22, int n) {
     int i, j, k;
 
@@ -184,6 +218,10 @@ void split(double* M, double** pM11, double** pM12, double** pM21, double** pM22
         }
 }
 
+/*  Merge 4 equal blocks (n/2 x n/2)
+    into 1 result matrix (n x n)
+    and return result matrix
+*/
 double* merge(double* C11, double* C12, double* C21, double* C22, int n) {
     double* C = malloc(n * n * 4 * sizeof(double));
     int big_n = n*2;
@@ -193,12 +231,6 @@ double* merge(double* C11, double* C12, double* C21, double* C22, int n) {
             C[i*n + j] = 0;
         }
     }
-
-    // printMat(C11, n);
-    // printMat(C12, n);
-    // printMat(C21, n);
-    // printMat(C22, n);
-
 
     //printf("\tStarting C combine!!\n");
     bool isLeft;
@@ -228,9 +260,30 @@ double* merge(double* C11, double* C12, double* C21, double* C22, int n) {
     }
     //printf("\tFinished C combine!!\n");
 
+    // Free partitions
+    // Doesn't work!!!!
+    // free(C11);
+    // free(C12);
+    // free(C21);
+    // free(C22);
+
     return C;
 }
 
+
+/*  
+    1/ Call strassen() recursively to split into 4 blocks
+    
+    2/ Calculate M1...M7
+    if current matrix size (before split) > 4x4:
+        call strassen() from M1...M7
+    else:
+        use simple O(n^3) multiplication from M1...M7
+    
+    3/ Calculate C11...C22 using M1...M7
+
+    4/ Merge C11...C22 => return C
+*/
 double* strassen(double* A, double* B, int n) {
     
     double* C; // = malloc(n * n * sizeof(double));
@@ -258,10 +311,10 @@ double* strassen(double* A, double* B, int n) {
     // Indices
     int i,j,k;
 
-    printf("--- A matrix ---\n");
-    printMat(A, n);
-    printf("--- B matrix ---\n");
-    printMat(B, n);
+    // printf("--- A matrix ---\n");
+    // printMat(A, n);
+    // printf("--- B matrix ---\n");
+    // printMat(B, n);
     // printf("--- C matrix ---\n");
     // printMat(C, n);
 
@@ -269,7 +322,7 @@ double* strassen(double* A, double* B, int n) {
     split(B, &B11, &B12, &B21, &B22, n);
     //split(C, &C11, &C12, &C21, &C22, n);
     
-    printf(" -- Finished partition! Starting M calc ------------\n\n");
+    // printf(" -- Finished partition! Starting M calc ------------\n\n");
 
     // M matrices for calculating
     double *M1, *M2, *M3, *M4, *M5, *M6, *M7;
@@ -304,7 +357,7 @@ double* strassen(double* A, double* B, int n) {
         M7 = mul(sub(A12, A22, n/2), add(B21, B22, n/2), n/2);
     }
 
-    printf(" -- Finished M calc! Combining to form C matrix --------------\n\n");
+    // printf(" -- Finished M calc! Combining to form C matrix --------------\n\n");
 
     C11 = add(sub(add(M1, M4, n/2), M5, n/2), M7, n/2);
     C12 = add(M3, M5, n/2);
@@ -320,10 +373,11 @@ double* strassen(double* A, double* B, int n) {
 
     C = merge(C11, C12, C21, C22, n/2);
 
-    printf("--- Finished combining C! --------------\n\n");
+    // printf("--- Finished combining C! --------------\n\n");
 
     return C;
 }
+
 
 
 
@@ -334,13 +388,13 @@ int main(int argc, char** argv) {
 
 // ------------------------------------------
     // Declarations
-    int n = 6, expanded_n = n;
+    int n = 8, expanded_n = n;
 
     // Matrices
     double* A = malloc(n * n * sizeof(double));
     double* B = malloc(n * n * sizeof(double));
     double* C = malloc(n * n * sizeof(double));
-    A = initMat(A, n, ONE_RING);
+    A = initMat(A, n, CHECKER);
     B = initMat(B, n, ONE_RING);
     //C = initMat(C, n, ZERO);
 
@@ -348,13 +402,13 @@ int main(int argc, char** argv) {
 
 
 // ---------------------------------------
-// clock_t startTime, endTime, totalTime;
-// startTime = clock();
+clock_t startTime, endTime, totalTime;
+startTime = clock();
 
         // --- Print only ----
-        // printMat(A, n);
-        // printMat(B, n);
-        // printMat(C, n);
+        printMat(A, expanded_n);
+        printMat(B, expanded_n);
+        // printMat(C, expanded_n);
 
         // --- Other ops -----
         // C = add(A, B, n);
@@ -371,15 +425,15 @@ int main(int argc, char** argv) {
         C = strassen(A, B, expanded_n);
         C = trim(C, n, expanded_n);
 
-        printf("-------------------------------------\n");
-        printf("--------- After Strassen: -----------\n");
+        // printf("-------------------------------------\n");
+        // printf("--------- After Strassen: -----------\n");
         printMat(C, n);
 
 
 
-// startTime = clock() - startTime;
-// totalTime = endTime - startTime;
-// printf("\nTotal time = %lf", (double)startTime / CLOCKS_PER_SEC);
+startTime = clock() - startTime;
+totalTime = endTime - startTime;
+printf("\nTotal time = %lf", (double)startTime / CLOCKS_PER_SEC);
 // ----------------------------------------
 
     free(A); free(B); free(C);
