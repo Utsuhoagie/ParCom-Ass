@@ -285,7 +285,8 @@ double* merge(double* C11, double* C12, double* C21, double* C22, int n) {
     4/ Merge C11...C22 => return C
 */
 double* strassen(double* A, double* B, int n) {
-    
+	//if (n % 16 == 0)
+	//	printf("- ");
     double* C; // = malloc(n * n * sizeof(double));
 
     // Matrices after splitting into 4
@@ -388,13 +389,13 @@ int main(int argc, char** argv) {
 
 // ------------------------------------------
     // Declarations
-    int n = 8, expanded_n = n;
+    int n = atoi(argv[1]), expanded_n = n;
 
     // Matrices
     double* A = malloc(n * n * sizeof(double));
     double* B = malloc(n * n * sizeof(double));
     double* C = malloc(n * n * sizeof(double));
-    A = initMat(A, n, CHECKER);
+    A = initMat(A, n, ONE_RING);
     B = initMat(B, n, ONE_RING);
     //C = initMat(C, n, ZERO);
 
@@ -406,8 +407,8 @@ clock_t startTime, endTime, totalTime;
 startTime = clock();
 
         // --- Print only ----
-        printMat(A, expanded_n);
-        printMat(B, expanded_n);
+        // printMat(A, expanded_n);
+        // printMat(B, expanded_n);
         // printMat(C, expanded_n);
 
         // --- Other ops -----
@@ -427,13 +428,13 @@ startTime = clock();
 
         // printf("-------------------------------------\n");
         // printf("--------- After Strassen: -----------\n");
-        printMat(C, n);
+        // printMat(C, n);
 
 
 
 startTime = clock() - startTime;
 totalTime = endTime - startTime;
-printf("\nTotal time = %lf", (double)startTime / CLOCKS_PER_SEC);
+printf("\nTotal time = %lf\n", (double)startTime / CLOCKS_PER_SEC);
 // ----------------------------------------
 
     free(A); free(B); free(C);
