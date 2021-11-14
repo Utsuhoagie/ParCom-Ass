@@ -5,33 +5,6 @@
 #include <time.h>
 
 
-
-
-#define A(i,j) A[i*n + j]
-#define B(i,j) B[i*n + j]
-#define C(i,j) C[i*n + j]
-#define M(i,j) M[i*n + j]
-#define N(i,j) N[i*n + j]
-
-
-#define A1(i,j) A1[i*n + j]
-#define A2(i,j) A2[i*n + j]
-#define A3(i,j) A3[i*n + j]
-#define A4(i,j) A4[i*n + j]
-#define B1(i,j) B1[i*n + j]
-#define B2(i,j) B2[i*n + j]
-#define B3(i,j) B3[i*n + j]
-#define B4(i,j) B4[i*n + j]
-
-#define M1(i,j) M1[i*n + j]
-#define M2(i,j) M2[i*n + j]
-#define M3(i,j) M3[i*n + j]
-#define M4(i,j) M4[i*n + j]
-#define M5(i,j) M5[i*n + j]
-#define M6(i,j) M6[i*n + j]
-#define M7(i,j) M7[i*n + j]
-
-
 typedef enum { ZERO, ONE_RING, ONE, CHECKER, INCR, DEC_RESET_INCR, RANDOM } Init;
 
 // ----- Helpers ----------------
@@ -260,7 +233,7 @@ double* merge(double* C11, double* C12, double* C21, double* C22, int n) {
 
 double* strassen(double* A, double* B, int n) {
     
-    double* C = malloc(n * n * sizeof(double));
+    double* C; // = malloc(n * n * sizeof(double));
 
     // Matrices after splitting into 4
     double *A11, *A12, *A21, *A22;
@@ -289,12 +262,12 @@ double* strassen(double* A, double* B, int n) {
     printMat(A, n);
     printf("--- B matrix ---\n");
     printMat(B, n);
-    printf("--- C matrix ---\n");
-    printMat(C, n);
+    // printf("--- C matrix ---\n");
+    // printMat(C, n);
 
     split(A, &A11, &A12, &A21, &A22, n);
     split(B, &B11, &B12, &B21, &B22, n);
-    split(C, &C11, &C12, &C21, &C22, n);
+    //split(C, &C11, &C12, &C21, &C22, n);
     
     printf(" -- Finished partition! Starting M calc ------------\n\n");
 
@@ -344,7 +317,7 @@ double* strassen(double* A, double* B, int n) {
         C21 = M2 + M4
         C22 = M1 - M2 + M3 + M6
     */
-    
+
     C = merge(C11, C12, C21, C22, n/2);
 
     printf("--- Finished combining C! --------------\n\n");
@@ -361,7 +334,7 @@ int main(int argc, char** argv) {
 
 // ------------------------------------------
     // Declarations
-    int n = 3, expanded_n = n;
+    int n = 6, expanded_n = n;
 
     // Matrices
     double* A = malloc(n * n * sizeof(double));
@@ -372,9 +345,6 @@ int main(int argc, char** argv) {
     //C = initMat(C, n, ZERO);
 
     expanded_n = closestHighPow(n);
-
-    // Transpose if needed
-    // B = transpose(B, n);
 
 
 // ---------------------------------------
