@@ -51,7 +51,7 @@ void printArr(double* M, int n) {
     e.g: 5x5 -> 8x8                                 */
 double* initMat(double* M, int n, Init init) {
     double data;
-    int i,j,k;
+    int i,j;
 
     switch(init) {
         case ZERO:
@@ -115,16 +115,24 @@ double* initMat(double* M, int n, Init init) {
 
     }
 
+    return M;
+}
 
-    int expanded_size = closestHighPow(n);
-    double* expanded_M = malloc(expanded_size * expanded_size * sizeof(double));
+double* expand(double* M, int n) {
+    //int expanded_n = closestHighPow(n);
+    int expanded_n = (n % 2 == 1? n + 1: n);
 
-    for (i = 0; i < expanded_size; i++) {
-        for (j = 0; j < expanded_size; j++) {
-            if (i < n && j < n)
-                expanded_M[i*expanded_size + j] = M[i*n + j];
+    double* expanded_M = malloc(expanded_n * expanded_n * sizeof(double));
+
+    int i, j;
+
+    for (i = 0; i < expanded_n; i++) {
+        for (j = 0; j < expanded_n; j++) {
+            if (i < n && j < n) {
+                expanded_M[i*expanded_n + j] = M[i*n + j];
+            }
             else 
-                expanded_M[i*expanded_size + j] = 0;
+                expanded_M[i*expanded_n + j] = 0;
         }
     }
 
@@ -136,7 +144,7 @@ double* initMat(double* M, int n, Init init) {
     e.g: 8x8 -> 5x5 or 6x6 or 7x7, depends on original size  */
 double* trim(double* M, int n, int expanded_n) {
     double* trimmed = malloc(n * n * sizeof(double));
-    int i,j,k;
+    int i,j;
 
     for (i = 0; i < n; i++) {
         for (j = 0; j < n; j++) {
@@ -220,12 +228,11 @@ void split(double* M, double** pM11, double** pM12, double** pM21, double** pM22
 
 /*  Merge 4 equal blocks (n/2 x n/2)
     into 1 result matrix (n x n)
-    and return result matrix
-*/
+    and return result matrix        */
 double* merge(double* C11, double* C12, double* C21, double* C22, int n) {
     double* C = malloc(n * n * 4 * sizeof(double));
     int big_n = n*2;
-    int i,j,k;
+    int i,j;
     for (i = 0; i < n; i++) {
         for (j = 0; j < n; j++) {
             C[i*n + j] = 0;
@@ -233,8 +240,7 @@ double* merge(double* C11, double* C12, double* C21, double* C22, int n) {
     }
 
     //printf("\tStarting C combine!!\n");
-    bool isLeft;
-    bool isUpper;
+    bool isLeft, isUpper;
     for (i = 0; i < big_n; i++) {
         for (j = 0; j < big_n; j++) {
             isLeft = j < (big_n / 2);
@@ -289,6 +295,22 @@ double* strassen(double* A, double* B, int n) {
 	//	printf("- ");
     double* C; // = malloc(n * n * sizeof(double));
 
+
+    // Small enough to use normal multiplication
+    if (n <= 4) {
+        C = mul(A, B, n);
+        return C;
+    }
+    
+
+    // If 
+    if (n % 2 != 0) {
+        A = expand(A, n);
+        B = expand(B, n);
+        //n = closestHighPow(n);
+        n++;
+    }
+
     // Matrices after splitting into 4
     double *A11, *A12, *A21, *A22;
     double *B11, *B12, *B21, *B22;
@@ -316,71 +338,68 @@ double* strassen(double* A, double* B, int n) {
     // printMat(A, n);
     // printf("--- B matrix ---\n");
     // printMat(B, n);
-    // printf("--- C matrix ---\n");
-    // printMat(C, n);
 
     split(A, &A11, &A12, &A21, &A22, n);
     split(B, &B11, &B12, &B21, &B22, n);
-    //split(C, &C11, &C12, &C21, &C22, n);
+
     
     // printf(" -- Finished partition! Starting M calc ------------\n\n");
 
     // M matrices for calculating
     double *M1, *M2, *M3, *M4, *M5, *M6, *M7;
 
-    /* 
-        M1 = (A11 + A22) * (B11 + B22)
+    /*  M1 = (A11 + A22) * (B11 + B22)
         M2 = (A21 + A22) * B11
         M3 = A11 * (B12 - B22)
         M4 = A22 * (B21 - B11)
         M5 = (A11 + A12) * B22
         M6 = (A21 - A11) * (B11 + B12)
-        M7 = (A12 - A22) * (B21 + B22)
-    */
-    double *M11, *M12, *M21, *M32, *M42, *M51, *M61, *M62, *M71, *M72;
+        M7 = (A12 - A22) * (B21 + B22)  */
 
-    if (n > 4) {
-        M1 = strassen(add(A11, A22, n/2), add(B11, B22, n/2), n/2);
-        M2 = strassen(add(A21, A22, n/2), B11               , n/2);
-        M3 = strassen(A11               , sub(B12, B22, n/2), n/2);
-        M4 = strassen(A22               , sub(B21, B11, n/2), n/2);
-        M5 = strassen(add(A11, A12, n/2), B22               , n/2);
-        M6 = strassen(sub(A21, A11, n/2), add(B11, B12, n/2), n/2);
-        M7 = strassen(sub(A12, A22, n/2), add(B21, B22, n/2), n/2);
-    }
-    else {      
-        M1 = mul(add(A11, A22, n/2), add(B11, B22, n/2), n/2);
-        M2 = mul(add(A21, A22, n/2), B11, n/2);
-        M3 = mul(A11, sub(B12, B22, n/2), n/2);
-        M4 = mul(A22, sub(B21, B11, n/2), n/2);
-        M5 = mul(add(A11, A12, n/2), B22, n/2);
-        M6 = mul(sub(A21, A11, n/2), add(B11, B12, n/2), n/2);
-        M7 = mul(sub(A12, A22, n/2), add(B21, B22, n/2), n/2);
-    }
+    M1 = strassen(add(A11, A22, n/2), add(B11, B22, n/2), n/2);
+    M2 = strassen(add(A21, A22, n/2), B11               , n/2);
+    M3 = strassen(A11               , sub(B12, B22, n/2), n/2);
+    M4 = strassen(A22               , sub(B21, B11, n/2), n/2);
+    M5 = strassen(add(A11, A12, n/2), B22               , n/2);
+    M6 = strassen(sub(A21, A11, n/2), add(B11, B12, n/2), n/2);
+    M7 = strassen(sub(A12, A22, n/2), add(B21, B22, n/2), n/2);
 
-    // printf(" -- Finished M calc! Combining to form C matrix --------------\n\n");
 
+    /*  C11 = M1 + M4 - M5 + M7
+        C12 = M3 + M5
+        C21 = M2 + M4
+        C22 = M1 - M2 + M3 + M6 */
     C11 = add(sub(add(M1, M4, n/2), M5, n/2), M7, n/2);
     C12 = add(M3, M5, n/2);
     C21 = add(M2, M4, n/2);
     C22 = add(add(sub(M1, M2, n/2), M3, n/2), M6, n/2);
 
-    /*
-        C11 = M1 + M4 - M5 + M7
-        C12 = M3 + M5
-        C21 = M2 + M4
-        C22 = M1 - M2 + M3 + M6
-    */
+    // printf(" -- Finished M calc! Combining to form C matrix --------------\n\n");
 
     C = merge(C11, C12, C21, C22, n/2);
 
     // printf("--- Finished combining C! --------------\n\n");
 
+    free(A11); free(A12); free(A21); free(A22);
+    free(B11); free(B12); free(B21); free(B22);
+    free(C11); free(C12); free(C21); free(C22);
+
     return C;
+
 }
 
+double* strassenMain(double* A, double* B, int n) {
+    double* C;
+    int expanded_n = (n % 2 == 1? n + 1 : n);
 
+    C = strassen(A, B, n);
 
+    C = trim(C, n, expanded_n);
+
+    //printMat(C, n);
+
+    return C;
+}
 
 /*  =======================================================================
     ======================================================================= */
@@ -389,7 +408,7 @@ int main(int argc, char** argv) {
 
 // ------------------------------------------
     // Declarations
-    int n = atoi(argv[1]), expanded_n = n;
+    int n = 500, expanded_n = n;
 
     // Matrices
     double* A = malloc(n * n * sizeof(double));
@@ -399,7 +418,7 @@ int main(int argc, char** argv) {
     B = initMat(B, n, ONE_RING);
     //C = initMat(C, n, ZERO);
 
-    expanded_n = closestHighPow(n);
+    expanded_n = (n % 2 == 1? n + 1 : n);
 
 
 // ---------------------------------------
@@ -423,8 +442,8 @@ startTime = clock();
 
 
         // --- Strassen mul ---
-        C = strassen(A, B, expanded_n);
-        C = trim(C, n, expanded_n);
+        C = strassenMain(A, B, n);
+        // C = trim(C, n, expanded_n);
 
         // printf("-------------------------------------\n");
         // printf("--------- After Strassen: -----------\n");
