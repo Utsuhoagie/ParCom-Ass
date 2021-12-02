@@ -60,11 +60,16 @@ int* add(int* A, int* B, int n) {
 
 
 
-// int* matrix(int) {
+int* recurAdd(int* A, int* B, int n, int times) {
+    // returns A + B*times
+    if (times == 1)
+        return add(A, B, n);
 
-// }
-
-
+    int* AB = recurAdd(A, B, n, times-1);
+    int* C = add(AB, B, n);
+    free(AB);
+    return C;
+}
 
 
 int main(int argc, char **argv) {
@@ -79,5 +84,5 @@ int main(int argc, char **argv) {
 
     print(C, n);
 
-    free(A);
+    free(A); free(B); free(C);
 }
