@@ -26,9 +26,9 @@ void printMat(double* M, int n) {
     int i,j,k;
 
     for (i = 0; i < n; i++) {
-        for (j = 0; j < n; j++) {
+        for (j = 0; j < n; j++)
             printf("%2.0lf ", M[i*n + j]);
-        }
+
         printf("\n");
     }
 
@@ -39,9 +39,8 @@ void printMat(double* M, int n) {
 void printArr(double* M, int n) {
     int i;
 
-    for (i = 0; i < n*n; i++) {
+    for (i = 0; i < n*n; i++)
         printf("%2.0lf ", M[i]);
-    }
 
     printf("\n\n");
 }
@@ -82,11 +81,9 @@ double* initMat(double* M, int n, Init init) {
             break;
 
         case CHECKER:
-            for (i = 0; i < n; i++) {
-                for (j = 0; j < n; j++) {
+            for (i = 0; i < n; i++)
+                for (j = 0; j < n; j++)
                     M[i*n + j] = (i + j) % 2;
-                }
-            }
             break;
 
         case INCR:
@@ -128,9 +125,8 @@ double* expand(double** pM, int n) {
 
     for (i = 0; i < expanded_n; i++) {
         for (j = 0; j < expanded_n; j++) {
-            if (i < n && j < n) {
+            if (i < n && j < n)
                 expanded_M[i*expanded_n + j] = (*pM)[i*n + j];
-            }
             else
                 expanded_M[i*expanded_n + j] = 0;
         }
@@ -144,19 +140,15 @@ double* expand(double** pM, int n) {
 /*  Trim matrix from expanded size = expanded_n x expanded_n
              down to original size = n x n
     e.g: 8x8 -> 5x5 or 6x6 or 7x7, depends on original size  */
-double* trim(double** pM, int n, int expanded_n) {
+void trim(double* M, double** out, int n, int expanded_n) {
     double* trimmed = malloc(n * n * sizeof(double));
     int i,j;
 
-    for (i = 0; i < n; i++) {
-        for (j = 0; j < n; j++) {
-            trimmed[i*n + j] = (*pM)[i*expanded_n + j];
-        }
-    }
+    for (i = 0; i < n; i++)
+        for (j = 0; j < n; j++)
+            trimmed[i*n + j] = M[i*expanded_n + j];
 
-    free(*pM);
-
-    return trimmed;
+    *out = trimmed;
 }
 
 // ---- Matrix operations --------------
@@ -399,21 +391,25 @@ double* strassenMain(double* A, double* B, int n) {
     C = strassen(A, B, n);
 
     // free(C);    // must free before trimming
-    C = trim(&C, n, expanded_n);
+    
+    double** C_out;
 
-    //printMat(C, n);
+    trim(C, C_out, n, expanded_n);
 
-    return C;
+    printMat(*C_out, n);
+
+    return C_out;
 }
 
 /*  =======================================================================
     ======================================================================= */
 
+
 int main(int argc, char** argv) {
 
 // ------------------------------------------
     // Declarations
-    int n = argv[1]? atoi(argv[1]) : 2, expanded_n = n;
+    int n = argv[1]? atoi(argv[1]) : 3, expanded_n = n;
 
     // Matrices
     double* A = malloc(n * n * sizeof(double));
@@ -447,7 +443,7 @@ startTime = clock();
 
 
         // --- Strassen mul ---
-        C = strassenMain(A, B, n);
+        // C = strassenMain(A, B, n);
         //C = trim(&C, n, expanded_n);
 
         // printf("-------------------------------------\n");
