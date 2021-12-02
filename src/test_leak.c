@@ -35,8 +35,6 @@ void init(int* A, int n, Init init) {
             }
             break;
     }
-
-    print(A, n);
 }
 
 
@@ -47,8 +45,16 @@ void init(int* A, int n, Init init) {
     ===== MATRIX OPERATIONS =====
 */
 
-int mul2(int* A) {
-    return 0;
+int* add(int* A, int* B, int n) {
+    int* C = malloc(sizeof(*C) * n * n);
+
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            C[i*n + j] = A[i*n + j] + B[i*n + j];
+        }
+    }
+
+    return C;
 }
 
 
@@ -64,8 +70,14 @@ int mul2(int* A) {
 int main(int argc, char **argv) {
     int n = 5;
     int *A = malloc(sizeof(*A) * n * n);
+    int *B = malloc(sizeof(*B) * n * n);
 
-    //init(A, n, ONE_RING);
+    init(A, n, ONE_RING);
+    init(B, n, ONE_RING);
+
+    int *C = add(A, B, n);
+
+    print(C, n);
 
     free(A);
 }
